@@ -9,6 +9,8 @@ $game_over = false
     @@forbidden_colors = []
     @@existing_colors = []
     @@wrong_ceils = {}
+    @@look_color = nil
+    @@wrong_ceils_color = []
 
     def people_xod
       puts "-----------------------------------"
@@ -64,7 +66,7 @@ $game_over = false
       ceil = ""
       puts "-----------------------------------"
       puts "Осталось попыток #{12-$attempts}"
-      if (@@existing_colors.length + @@guess_colors.length) < 4
+      if @@look_color == nil
         $colors.shuffle.each { |e|
           if !@@guess_colors.has_value?(e) && !@@forbidden_colors.include?(e)
             color = e
@@ -72,26 +74,24 @@ $game_over = false
           end
         }
       else
-        color = @@existing_colors.shuffle[0]
+        color = @@look_color
       end
       loop do
         ceil = 1+rand(4)
-        if !@@wrong_ceils[color].nil?
-          t = !@@wrong_ceils[color].include?(ceil)
-        else
-          t = true
-        end
-        break if !@@guess_colors.has_key?(ceil) && t
+        break if !@@guess_colors.has_key?(ceil) && !@@wrong_ceils_color.include?(ceil)
       end
       puts "Цвет #{color} имеет позицию #{ceil}?"
       puts "Введите 1, если да; 2 если нет; 3 если такого цвета вообще нет."
       case gets.chomp.strip.to_i
       when 1
         @@guess_colors[ceil] = color
-        @@existing_colors.delete(color)
+        if @@look_color == color
+          @@look_color = nil
+          @@wrong_ceils_color = []
+        end
       when 2
-        @@existing_colors.push(color) until @@existing_colors.include?(color)
-        @@wrong_ceils[color] = !@@wrong_ceils[color].nil? ? @@wrong_ceils[color].push(ceil) : [].push(ceil)
+        @@look_color = color
+        @@wrong_ceils_color = @@wrong_ceils_color.push(ceil)
       when 3
         @@forbidden_colors.push(color)
       end
@@ -139,19 +139,18 @@ $game_over = false
   def self.start
     print "\nДобро пожаловать в игру Mastermind! У вас есть 12 попыток, чтобы угадать какие цвета и в каких ячейках расположены.
 Всего надо угадать 4 цвета. Возможны следующие цвета: голубой, синий, красный, зеленый, желтый, черный.\n"
-    begin
-    puts "Выберите режим игры: 1 игрок отгадывает, компьютер загадывает; 2 игрок загадывает компьютер отгадывает"
-    mode = gets.chomp.strip.to_i
-    if mode == 1
-      player_guess
-    elsif mode == 2
-      comp_guess
-    else
-      raise "Вы ввели что-то не то, попробуйте снова"
-    end
-    rescue Exception => e
-      puts e
-      retry
+    loop do
+      puts "Выберите режим игры: 1 игрок отгадывает, компьютер загадывает; 2 игрок загадывает компьютер отгадывает"
+      mode = gets.chomp.strip.to_i
+      if mode == 1
+        player_guess
+        break
+      elsif mode == 2
+        comp_guess
+        break
+      else
+        puts "Вы ввели что-то не то, попробуйте снова"
+      end
     end
   end
 
