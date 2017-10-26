@@ -3,6 +3,7 @@ $attempts = 0
 $colors = ["голубой","синий","красный","зеленый","желтый","черный"]
 $hash_colors = {}
 $game_over = false
+$line = "-----------------------------------"
 
   class Player
     @@guess_colors = {}
@@ -13,7 +14,6 @@ $game_over = false
     @@wrong_ceils_color = []
 
     def people_xod
-      puts "-----------------------------------"
       puts "Осталось попыток #{12-$attempts}"
       puts "Введите цвет:"
       color = gets.chomp.strip.downcase
@@ -32,7 +32,6 @@ $game_over = false
           puts "Такого цвета вообще нет!"
         end
       }
-      k = 0
       self.guess
       self.game_over(:people)
     end
@@ -55,16 +54,20 @@ $game_over = false
       end
     end
 
+    def print_color(id)
+      !@@guess_colors[id].nil? ? @@guess_colors[id] : "     "
+    end
+
     def guess
       puts
-      print "#{@@guess_colors[1]}\t#{@@guess_colors[2]}\t#{@@guess_colors[3]}\t#{@@guess_colors[4]}"
+      print "#{self.print_color(1)}  #{self.print_color(2)}  #{self.print_color(3)}  #{self.print_color(4)}\n"
+      puts $line
       puts
     end
 
     def comp_xod
       color = ""
       ceil = ""
-      puts "-----------------------------------"
       puts "Осталось попыток #{12-$attempts}"
       if @@look_color == nil
         $colors.shuffle.each { |e|
@@ -80,20 +83,28 @@ $game_over = false
         ceil = 1+rand(4)
         break if !@@guess_colors.has_key?(ceil) && !@@wrong_ceils_color.include?(ceil)
       end
-      puts "Цвет #{color} имеет позицию #{ceil}?"
-      puts "Введите 1, если да; 2 если нет; 3 если такого цвета вообще нет."
-      case gets.chomp.strip.to_i
-      when 1
-        @@guess_colors[ceil] = color
-        if @@look_color == color
-          @@look_color = nil
-          @@wrong_ceils_color = []
+      begin
+        puts "Цвет #{color} имеет позицию #{ceil}?"
+        puts "Введите 1, если да; 2 если нет; 3 если такого цвета вообще нет."
+        case gets.chomp.strip.to_i
+        when 1
+          @@guess_colors[ceil] = color
+          if @@look_color == color
+            @@look_color = nil
+            @@wrong_ceils_color = []
+          end
+        when 2
+          @@look_color = color
+          @@wrong_ceils_color = @@wrong_ceils_color.push(ceil)
+        when 3
+          if @@forbidden_colors.length >= 2
+            raise "Вы врете! Обманывать не хорошо, попробуйте снова."
+          end
+          @@forbidden_colors.push(color)
         end
-      when 2
-        @@look_color = color
-        @@wrong_ceils_color = @@wrong_ceils_color.push(ceil)
-      when 3
-        @@forbidden_colors.push(color)
+      rescue Exception => e
+        puts e
+        retry
       end
       self.guess
       self.game_over(:comp)
@@ -114,7 +125,6 @@ $game_over = false
       end
       $game_over = true
     end
-
   end
 
   def self.player_guess
